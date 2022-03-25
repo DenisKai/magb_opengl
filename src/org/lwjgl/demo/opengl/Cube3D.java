@@ -161,7 +161,7 @@ class CubeModel extends OGLModel3D {
             addVertex(+1, +1, 0);
             addVertex(+1, -1, 0);
             
-            // bin vertex positions and normals
+            // bind vertex positions and normals
             bindPositionBuffer();           
             bindNormalBuffer();           
 		}
