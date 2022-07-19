@@ -94,7 +94,7 @@ class GearsModel extends OGLModel3D {
         //V.rotateZ(45.0f*deg2rad);
 
         // LIGHT
-        glUniform3fv(u_LIGHT, V.transformDirection(m_light.set(5.0, 5.0, 10.0)).normalize().get(m_vec3f)); // V * m_light
+        glUniform3fv(u_LIGHT, V.transformDirection(m_light.set(5.0, 5.0, 10.0)).normalize().get(m_vec3f)); // V*m_light
 
         // GEAR 1 (model 1)
         M.translation(-3.0, -2.0, 0.0)
