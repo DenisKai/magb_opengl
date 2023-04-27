@@ -20,7 +20,7 @@
 			<id>linux-amd64</id>
 			<activation>
 				<os>
-					<family>unix</family>
+					<name>Linux</name>
 					<arch>amd64</arch>
 				</os>
 			</activation>
@@ -32,7 +32,7 @@
 			<id>linux-aarch64</id>
 			<activation>
 				<os>
-					<family>unix</family>
+					<name>Linux</name>
 					<arch>aarch64</arch>
 				</os>
 			</activation>
@@ -151,4 +151,32 @@
 			<version>${joml.version}</version>
 		</dependency>
 	</dependencies>
+
+	<build>
+	    <plugins>
+	        <plugin>
+	            <groupId>org.apache.maven.plugins</groupId>
+	            <artifactId>maven-enforcer-plugin</artifactId>
+	            <version>3.1.0</version>
+	            <executions>
+	                <execution>
+	                    <id>enforce-os-profile</id>
+	                    <goals>
+	                        <goal>enforce</goal>
+	                    </goals>
+	                    <configuration>
+	                        <rules>
+	                            <requireActiveProfile>
+	                                <profiles>linux-amd64,linux-aarch64,macos-x86_64,macos-aarch64,windows-amd64</profiles>
+	                                <all>false</all>
+	                            </requireActiveProfile>
+	                        </rules>
+	                        <fail>true</fail>
+	                    </configuration>
+	                </execution>
+	            </executions>
+	        </plugin>
+	    </plugins>
+	</build>
 </project>
+
