@@ -1,3 +1,4 @@
-# OpenGL-Student
+# OpenGL-Student-Denis Kai Wilhelm
 
-OpenGL demo project for magb students
+OpenGL project expanded by Denis Kai Wilhelm
+(Base Project by Christoph Stamm)

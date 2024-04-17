@@ -8,6 +8,7 @@ import static org.lwjgl.opengl.GL11C.GL_COLOR_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11C.GL_DEPTH_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11C.glClear;
 import static org.lwjgl.opengl.GL11C.glDrawArrays;
+import static org.lwjgl.opengl.GL15C.GL_SRC1_ALPHA;
 import static org.lwjgl.opengl.GL20C.glUniform3fv;
 import static org.lwjgl.opengl.GL20C.glUniform4fv;
 import static org.lwjgl.opengl.GL20C.glUniformMatrix3fv;
@@ -49,6 +50,10 @@ public class Cube3D extends OGLApp<CubeModel> {
 class CubeModel extends OGLModel3D {
 	final static double deg2rad = PI/180;
 
+	private final float OPACITY_OUTSIDE = 0.75f;
+	private final float OPACITY_INSIDE = 1f;
+
+
 	private final Matrix3d m_vm = new Matrix3d();
 	private final Vector3d m_light  = new Vector3d();
 	private final FloatBuffer m_vec3f = BufferUtils.createFloatBuffer(3);
@@ -67,6 +72,8 @@ class CubeModel extends OGLModel3D {
 
 	@Override
 	public void init(int width, int height) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		super.init(width, height);
 		m_side = new Side(new Color4D(0, 0, 0, 1));
 	}
@@ -81,29 +88,46 @@ class CubeModel extends OGLModel3D {
         // LIGHT
         glUniform3fv(u_LIGHT, m_light.set(0.0, 0.0, 10.0).normalize().get(m_vec3f)); // V*m_light
 
-        // front
-        M.translation(0, 0, 1); // translation = identity.translate
-		drawSide(m_side.setRGBA(1, 0, 0, 1));
+		//inside
+		//front
+		M.rotationY(Math.PI).translate(0, 0, -1);
+		drawSide(m_side.setRGBA(1, 0, 0, OPACITY_INSIDE));
+		//back
+		M.translation(0, 0, -1);
+		drawSide(m_side.setRGBA(0, 1, 1, OPACITY_INSIDE));
+		//right
+		M.rotationY(-Math.PI/2).translate(0, 0, -1);
+		drawSide(m_side.setRGBA(1, 1, 0, OPACITY_INSIDE));
+		//left
+		M.rotationY(Math.PI/2).translate(0, 0, -1);
+		drawSide(m_side.setRGBA(0, 0, 1, OPACITY_INSIDE));
+		//top
+		M.rotationX(Math.PI/2).translate(0, 0, -1);
+		drawSide(m_side.setRGBA(0, 1, 0, OPACITY_INSIDE));
+		//bottom
+		M.rotationX(-Math.PI/2).translate(0, 0, -1);
+		drawSide(m_side.setRGBA(0, 1, 0, OPACITY_OUTSIDE));
 
-		// right
-		M.rotationY(Math.PI/2).translate(0, 0, 1); // M = Ry*T
-	    drawSide(m_side.setRGBA(1, 1, 0, 1));
 
+		//outside
+		// front
+		M.translation(0, 0, 1); // translation = identity.translate
+		drawSide(m_side.setRGBA(1, 0, 0, OPACITY_OUTSIDE));
 		// back
 		M.rotationY(Math.PI).translate(0, 0, 1);
-        drawSide(m_side.setRGBA(0, 1, 1, 1));
-
+		drawSide(m_side.setRGBA(0, 1, 1, OPACITY_OUTSIDE));
+		// right
+		M.rotationY(Math.PI/2).translate(0, 0, 1); // M = Ry*T
+		drawSide(m_side.setRGBA(1, 1, 0, OPACITY_OUTSIDE));
 		// left
 	    M.rotationY(-Math.PI/2).translate(0, 0, 1);
-		drawSide(m_side.setRGBA(0, 0, 1, 1));
-
+		drawSide(m_side.setRGBA(0, 0, 1, OPACITY_OUTSIDE));
+		// top
+		M.rotationX(-Math.PI/2).translate(0, 0, 1);
+		drawSide(m_side.setRGBA(1, 0, 1, OPACITY_OUTSIDE));
 		// bottom
 		M.rotationX(Math.PI/2).translate(0, 0, 1);
-	    drawSide(m_side.setRGBA(0, 1, 0, 1));
-
-		// top
-	    M.rotationX(-Math.PI/2).translate(0, 0, 1);
-		drawSide(m_side.setRGBA(1, 0, 1, 1));
+		drawSide(m_side.setRGBA(0, 1, 0, OPACITY_OUTSIDE));
 
 	    // fps
         m_count++;
