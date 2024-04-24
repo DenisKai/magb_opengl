@@ -202,6 +202,8 @@ class Icosidodecahedron extends OGLModel3D {
         M.translation(-p_normal.x, -p_normal.y, -p_normal.z).rotateY(Math.PI).rotateZ(Math.PI).rotateX(p_angle);
         drawPentagon(pentagon.setRGBA(1, 0, 0, 1));
 
+        //TODO restliche Pentagon zeichnen (mit Rotation des p_normal x->y 90° und y->y 90°
+
 
         // Upper Triangle (facing Z-positive) (EGI)
         Vector3f[] vertices_t = {
@@ -226,8 +228,7 @@ class Icosidodecahedron extends OGLModel3D {
         drawTriangle(triangle.setRGBA(0, 1, 0, 1));
 
 
-        // Mit dem Vertauschen der Achsen können auch die Dreiecke gezeichnet werden, die nicht Symmetrisch auf einer/zwei Achsen bzw. Mittelpunkt sind.
-        // liegende Box
+        // Liegende Box. Mit dem Vertauschen der Achsen können auch die Dreiecke gezeichnet werden, die nicht Symmetrisch auf einer/zwei Achsen bzw. Mittelpunkt sind.
         Vector3f t_normal_lie = new Vector3f();
         t_normal.rotateY((float) (Math.PI / 2), t_normal_lie).rotateX((float) (Math.PI / 2), t_normal_lie);
         // Gegenwinkel des Originals (90 - normal_side.angle(t_normal))
@@ -250,7 +251,7 @@ class Icosidodecahedron extends OGLModel3D {
         Vector3f t_normal_s = new Vector3f();
         t_normal.rotateX((float) (Math.PI / 2), t_normal_s).rotateY((float) (Math.PI / 2), t_normal_s);
 
-        //+90, da Achse gedreht ist und Winkel von Original kann übernommen werden
+        //+90, da Achse gedreht ist und Dreh-Winkel von Original kann übernommen werden
         M.translation(t_normal_s.x, t_normal_s.y, t_normal_s.z).rotateY(-Math.PI / 2).rotateX((Math.PI / 2) + t_angle);
         drawTriangle(triangle.setRGBA(0, 1, 0, 1));
 
@@ -264,6 +265,10 @@ class Icosidodecahedron extends OGLModel3D {
         drawTriangle(triangle.setRGBA(0, 1, 0, 1));
 
 
+        // TODO: Die Eck-Triangles füllen.
+
+
+        // ----- End of placing sides -----
         //fps
         m_count++;
 
