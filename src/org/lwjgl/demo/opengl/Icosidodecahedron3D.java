@@ -169,13 +169,13 @@ class Icosidodecahedron extends OGLModel3D {
         Vector3f[] octahedron_vertices = getOctahedron_vertices();
 
         // Ein anderes Set liegt auf den Ecken eines goldenen Rechteckes.
-        // Alle Punkte sind mit sign Flip + geraden Permutation dieser Formel zu berechnen: (+-_s/2, +- _s*_phi / 2,+- _s*_phi**2)
+        // Alle Punkte sind mit sign Flip + geraden Permutation dieser Formel zu berechnen: (+-_s/2, +- _s*_phi / 2,+- _s*_phi**2) (24 Vertices)
         Vector3f[] goldenRect_vertices = getGoldenRectangleVertices();
 
-        // Normale zeigt Richtung Z-Positiv (Vertices), für jedes neue Objekt.
+        // Normale zeigt Richtung Z-Positiv (Vertices), gilt für jede neue Seite.
         Vector3f normal_side = new Vector3f(0, 0, 1);
 
-        //Upper Pentagon (IGWCZ)
+        //Upper Pentagon (facing z-positive) (IGWCZ)
         Vector3f[] p_vertices = {
                 goldenRect_vertices[1],
                 goldenRect_vertices[0],
@@ -185,7 +185,7 @@ class Icosidodecahedron extends OGLModel3D {
         };
         // Normale berechnen die durch Mittelpunkt geht
         Vector3f p_normal = calculateMiddlePoint(p_vertices);
-        // Rotation um Objekt anzugleichen
+        // Rotation um Seite anzugleichen
         float p_angle = -normal_side.angle(p_normal);
 
 
@@ -196,100 +196,72 @@ class Icosidodecahedron extends OGLModel3D {
         M.translation(p_normal.x, p_normal.y, -p_normal.z).rotateY(Math.PI).rotateX(p_angle);
         drawPentagon(pentagon.setRGBA(1, 1, 0, 1));
 
+        M.translation(p_normal.x, -p_normal.y, p_normal.z).rotateZ(Math.PI).rotateX(p_angle);
+        drawPentagon(pentagon.setRGBA(1, 0, 0, 1));
 
-        // Upper Triangle (EGI)
+        M.translation(-p_normal.x, -p_normal.y, -p_normal.z).rotateY(Math.PI).rotateZ(Math.PI).rotateX(p_angle);
+        drawPentagon(pentagon.setRGBA(1, 0, 0, 1));
+
+
+        // Upper Triangle (facing Z-positive) (EGI)
         Vector3f[] vertices_t = {
                 octahedron_vertices[4],
                 goldenRect_vertices[0],
                 goldenRect_vertices[1]
         };
         Vector3f t_normal = calculateMiddlePoint(vertices_t);
-        float t_angle = -normal_side.angle(t_normal);
+        float t_angle = normal_side.angle(t_normal);
 
         //Zeichnen und Verschieben/Drehen der Triangles
-        M.translation(t_normal.x, t_normal.y, t_normal.z).rotateZ(Math.PI).rotateX(-t_angle);
+        M.translation(t_normal.x, t_normal.y, t_normal.z).rotateZ(Math.PI).rotateX(t_angle);
         drawTriangle(triangle.setRGBA(0, 1, 0, 1));
 
-        M.translation(t_normal.x, -t_normal.y, t_normal.z).rotateX(-t_angle);
+        M.translation(t_normal.x, -t_normal.y, t_normal.z).rotateX(t_angle);
+        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
+
+        M.translation(t_normal.x, t_normal.y, -t_normal.z).rotateY(Math.PI).rotateZ(Math.PI).rotateX(t_angle);
+        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
+
+        M.translation(t_normal.x, -t_normal.y, -t_normal.z).rotateY(Math.PI).rotateX(t_angle);
         drawTriangle(triangle.setRGBA(0, 1, 0, 1));
 
 
+        // Mit dem Vertauschen der Achsen können auch die Dreiecke gezeichnet werden, die nicht Symmetrisch auf einer/zwei Achsen bzw. Mittelpunkt sind.
+        // liegende Box
+        Vector3f t_normal_lie = new Vector3f();
+        t_normal.rotateY((float) (Math.PI / 2), t_normal_lie).rotateX((float) (Math.PI / 2), t_normal_lie);
+        // Gegenwinkel des Originals (90 - normal_side.angle(t_normal))
+        float t_angle_lie = -normal_side.angle(t_normal_lie);
 
-        /*
-        // source is directly initialized at z = 0. therefore the normal points towards z+ which is 1.
-        Vector3f norm_source = new Vector3f(0, 0, 1);
+        M.translation(t_normal_lie.x, t_normal_lie.y, t_normal_lie.z).rotateY(-t_angle_lie).rotateZ(-Math.PI / 2);
+        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
 
-        for (int i = 0; i < indices.length; i++) {
-            Vector3f target_center = new Vector3f();
-            target_center.x = (verticesIcosahedron[indices[i][0]].x + verticesIcosahedron[indices[i][1]].x + verticesIcosahedron[indices[i][2]].x) / 3;
-            target_center.y = (verticesIcosahedron[indices[i][0]].y + verticesIcosahedron[indices[i][1]].y + verticesIcosahedron[indices[i][2]].y) / 3;
-            target_center.z = (verticesIcosahedron[indices[i][0]].z + verticesIcosahedron[indices[i][1]].z + verticesIcosahedron[indices[i][2]].z) / 3;
+        M.translation(t_normal_lie.x, t_normal_lie.y, -t_normal_lie.z).rotateY(Math.PI).rotateY(t_angle_lie).rotateZ(Math.PI / 2);
+        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
 
-            Vector3f norm_target = new Vector3f(target_center.x, target_center.y, target_center.z);
+        M.translation(-t_normal_lie.x, t_normal_lie.y, t_normal_lie.z).rotateY(t_angle_lie).rotateZ(Math.PI / 2);
+        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
 
-            // TODO rules for rotation of x, y and z
-            float y_rotation = (float) Math.toRadians(0);
-            float x_rotation = (float) Math.toRadians(0);
-            float z_rotation = (float) Math.toRadians(60);
-
-
-            // pieces on one axis == 0: front
-            if (target_center.x == 0 || target_center.y == 0 || target_center.z == 0) {
-                if (target_center.x == 0) {
-                    x_rotation = -norm_source.angle(norm_target);
-                    M.translation(norm_target).rotateX(x_rotation).rotateZ(z_rotation);
-                }
-
-                if (target_center.y == 0) {
-                    x_rotation = -norm_source.angle(norm_target);
-                    z_rotation = (float) -(Math.PI / 2);
-
-                    M.translation(norm_target).rotateZ(z_rotation).rotateX(x_rotation);
-                    drawSide(tri.setRGBA(0, 1, 0, 1));
-                }
-
-                if (target_center.z == 0) {
-                    y_rotation = (float) (Math.PI / 2);
-
-                    Vector3f norm_dash = new Vector3f(1, 0, 0);
-
-                    x_rotation = -norm_dash.angle(norm_target);
-                    M.translation(norm_target).rotateY(y_rotation).rotateX(x_rotation);
-                }
-
-                drawSide(tri.setRGBA(0, 1, 0, 1));
-            }
+        M.translation(-t_normal_lie.x, t_normal_lie.y, -t_normal_lie.z).rotateY(-Math.PI).rotateY(-t_angle_lie).rotateZ(-Math.PI / 2);
+        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
 
 
-            // Schräges Element vorne Rechts, 45° von jeder Ebene => equals to Vector that points to 1,1,1 (normalized)
-            Vector3f norm = new Vector3f(1, 1, 1).normalize();
-            System.out.println(norm);
-            System.out.println(norm_target);
-            if (norm.dot(norm_target) > 0) {
-                // Schnittlinie berechnen
-                Vector3f cross = norm_source.cross(norm_target);
+        // Das gleiche für die stehende Box
+        Vector3f t_normal_s = new Vector3f();
+        t_normal.rotateX((float) (Math.PI / 2), t_normal_s).rotateY((float) (Math.PI / 2), t_normal_s);
 
-                float new_norm = (float) (1/Math.sqrt(3));
-                M.rotate(Math.PI/4, norm.mul(-1));//.rotate(Math.toRadians(60), cross);
-                drawSide(tri.setRGBA(0, 1, 0, 1));
-            }
+        //+90, da Achse gedreht ist und Winkel von Original kann übernommen werden
+        M.translation(t_normal_s.x, t_normal_s.y, t_normal_s.z).rotateY(-Math.PI / 2).rotateX((Math.PI / 2) + t_angle);
+        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
 
-        }
-        */
+        M.translation(-t_normal_s.x, t_normal_s.y, t_normal_s.z).rotateY(Math.PI / 2).rotateX((Math.PI / 2) + t_angle);
+        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
 
+        M.translation(t_normal_s.x, -t_normal_s.y, t_normal_s.z).rotateY(Math.PI / 2).rotateX(-(Math.PI / 2) + t_angle);
+        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
 
-        /*
-        M.translation(0, 0, 0);
-        for (int i = 0; i < 20; i++) {
-            Vector3f[] v = {
-                    verticesIcosahedron[indices[i][0]],
-                    verticesIcosahedron[indices[i][1]],
-                    verticesIcosahedron[indices[i][2]]
-            };
-
-            drawSide(new TriangleSide(COLORS[i], v));
-        }
-         */
+        M.translation(-t_normal_s.x, -t_normal_s.y, t_normal_s.z).rotateY(-Math.PI / 2).rotateX(-(Math.PI / 2) + t_angle);
+        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
 
 
         //fps
