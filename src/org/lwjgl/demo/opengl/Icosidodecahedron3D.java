@@ -1,6 +1,7 @@
 package org.lwjgl.demo.opengl;
 
 
+import org.joml.Math;
 import org.joml.Matrix3d;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
@@ -14,10 +15,15 @@ import org.lwjgl.opengl.GL11;
 import java.nio.FloatBuffer;
 
 import static org.joml.Math.PI;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_A;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_B;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_DOWN;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_J;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_N;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_PAGE_DOWN;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_PAGE_UP;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_U;
@@ -81,6 +87,22 @@ public class Icosidodecahedron3D extends OGLApp<Icosidodecahedron> {
                     case GLFW_KEY_J:
                         model.scaleDown(0.2f);
                         break;
+                    case GLFW_KEY_B:
+                        model._AXIS_ROTATION = false;
+                        model._BUILD_MODE = true;
+                        break;
+                    case GLFW_KEY_PAGE_UP:
+                        model.buildStep++;
+                        break;
+                    case GLFW_KEY_PAGE_DOWN:
+                        if (model.buildStep - 1 >= 0 && model._BUILD_MODE) {
+                            model.buildStep--;
+                        }
+                        break;
+                    case GLFW_KEY_A:
+                        model._AXIS_ROTATION = true;
+                        model._BUILD_MODE = false;
+                        break;
                 }
             }
         };
@@ -96,10 +118,17 @@ class Icosidodecahedron extends OGLModel3D {
     // configuration parameters
     // length of one Icosidodecahedron edge
     static float _s = 1f;
-    // Phi from the formula (golden ratio)
+    // Phi (golden ratio)
     final static float _phi = (float) ((1 + Math.sqrt(5)) / 2);
     // Phi with factor of length (use this in calculations of vertices)
     static float s_phi = _s * _phi;
+
+
+    // Buildmode
+    boolean _AXIS_ROTATION = true;
+    boolean _BUILD_MODE = false;
+    int buildStep = 0;
+    final int maxSteps = 100;
 
 
     final static double deg2rad = PI / 180;
@@ -111,9 +140,9 @@ class Icosidodecahedron extends OGLModel3D {
     private final FloatBuffer m_mat3f = BufferUtils.createFloatBuffer(3 * 3);
     private final FloatBuffer m_mat4f = BufferUtils.createFloatBuffer(4 * 4);
 
-    private TriangleSide t_side;
     private Triangle triangle;
     private Pentagon pentagon;
+    private Rectangle rectangle;
     private double m_startTime = System.currentTimeMillis() / 1000.0;
     private double m_distance = 15.0f;    // camera distance
     private double m_dxAngle = 0;        // degrees
@@ -132,6 +161,19 @@ class Icosidodecahedron extends OGLModel3D {
     private double m_zAngle = 0;        // degrees
     private long m_count;
 
+
+    // colors
+    final Color4D PURPLE = new Color4D(0.62f, 0.12f, 0.94f, 1);
+    final Color4D DARK_GREEN = new Color4D(0.15f, 0.56f, 0.5f, 1);
+    final Color4D PURPLE_TRANSPARENT = new Color4D(0.62f, 0.12f, 0.94f, 0.45f);
+    final Color4D DARK_GREEN_TRANSPARENT = new Color4D(0.15f, 0.56f, 0.5f, 0.45f);
+
+    final Color4D BLUE = new Color4D(0, 0, 1, 1);
+    final Color4D PINK = new Color4D(1, 0.6f, 0.6f, 1);
+    final Color4D GREEN = new Color4D(0, 0.4f, 0, 1);
+    final Color4D YELLOW = new Color4D(1, 1, 0, 1);
+
+
     @Override
     public void init(int width, int height) {
         glEnable(GL_BLEND);
@@ -139,6 +181,7 @@ class Icosidodecahedron extends OGLModel3D {
         super.init(width, height);
         this.triangle = new Triangle(new Color4D(0, 0, 0, 1));
         this.pentagon = new Pentagon(new Color4D(0, 0, 0, 1));
+        this.rectangle = new Rectangle(new Color4D(0, 0, 0, 1));
     }
 
     @Override
@@ -151,17 +194,8 @@ class Icosidodecahedron extends OGLModel3D {
         // Light
         glUniform3fv(u_LIGHT, m_light.set(0.0, 0.0, 10.0).normalize().get(m_vec3f)); // V*m_light
 
-        // rotation test
-        Vector3f a = new Vector3f(_s / 2, s_phi / 2, (s_phi * s_phi) / 2);
-        a.rotateX((float) (Math.PI / 2)).rotateY((float) (Math.PI / 2));
-
+        // Coordinate System render
         renderCoordinateSystem();
-        M.translation(1, 0, 0);
-        drawTriangle(triangle.setRGBA(1, 0, 0, 1));
-
-        M.translation(0, 0, 0.1);
-        drawPentagon(pentagon.setRGBA(0, 0, 1, 1));
-
 
         // Definition: Aussenradius gleich phi wenn Edge = 1
         // Ein Set der Ecken liegt auf einem Oktaeder, welche eine innere Länge/Breite/Höhe zwischen zwei gegenüberliegenden Ecken von 2 phi besitzt
@@ -172,9 +206,13 @@ class Icosidodecahedron extends OGLModel3D {
         // Alle Punkte sind mit sign Flip + geraden Permutation dieser Formel zu berechnen: (+-_s/2, +- _s*_phi / 2,+- _s*_phi**2) (24 Vertices)
         Vector3f[] goldenRect_vertices = getGoldenRectangleVertices();
 
+        // Ich habe das Icosidodecahedron in Geogebra nachgebaut: https://www.geogebra.org/m/y2k4gwwj.
+        // Die Kommentare hinter den Koordinaten beziehen sich auf den entsprechenden Punkt.
+
         // Normale zeigt Richtung Z-Positiv (Vertices), gilt für jede neue Seite.
         Vector3f normal_side = new Vector3f(0, 0, 1);
 
+        // ----- Pentagon -----
         //Upper Pentagon (facing z-positive) (IGWCZ)
         Vector3f[] p_vertices = {
                 goldenRect_vertices[1],
@@ -183,92 +221,54 @@ class Icosidodecahedron extends OGLModel3D {
                 octahedron_vertices[2],
                 goldenRect_vertices[17],
         };
-        // Normale berechnen die durch Mittelpunkt geht
+        // Normale die durch Mittelpunkt der Seite geht
         Vector3f p_normal = calculateMiddlePoint(p_vertices);
-        // Rotation um Seite anzugleichen
-        float p_angle = -normal_side.angle(p_normal);
 
 
-        // Zeichnen und Verschieben/Drehen der Pentagons
-        M.translation(p_normal.x, p_normal.y, p_normal.z).rotateX(p_angle);
-        drawPentagon(pentagon.setRGBA(1, 0, 0, 1));
-
-        M.translation(p_normal.x, p_normal.y, -p_normal.z).rotateY(Math.PI).rotateX(p_angle);
-        drawPentagon(pentagon.setRGBA(1, 1, 0, 1));
-
-        M.translation(p_normal.x, -p_normal.y, p_normal.z).rotateZ(Math.PI).rotateX(p_angle);
-        drawPentagon(pentagon.setRGBA(1, 0, 0, 1));
-
-        M.translation(-p_normal.x, -p_normal.y, -p_normal.z).rotateY(Math.PI).rotateZ(Math.PI).rotateX(p_angle);
-        drawPentagon(pentagon.setRGBA(1, 0, 0, 1));
-
-        //TODO restliche Pentagon zeichnen (mit Rotation des p_normal x->y 90° und y->y 90°
-
-
+        // ----- Triangles -----
         // Upper Triangle (facing Z-positive) (EGI)
         Vector3f[] vertices_t = {
                 octahedron_vertices[4],
                 goldenRect_vertices[0],
                 goldenRect_vertices[1]
         };
+        // Normale die durch Mittelpunkt der Seite geht
         Vector3f t_normal = calculateMiddlePoint(vertices_t);
-        float t_angle = normal_side.angle(t_normal);
-
-        //Zeichnen und Verschieben/Drehen der Triangles
-        M.translation(t_normal.x, t_normal.y, t_normal.z).rotateZ(Math.PI).rotateX(t_angle);
-        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
-
-        M.translation(t_normal.x, -t_normal.y, t_normal.z).rotateX(t_angle);
-        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
-
-        M.translation(t_normal.x, t_normal.y, -t_normal.z).rotateY(Math.PI).rotateZ(Math.PI).rotateX(t_angle);
-        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
-
-        M.translation(t_normal.x, -t_normal.y, -t_normal.z).rotateY(Math.PI).rotateX(t_angle);
-        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
 
 
-        // Liegende Box. Mit dem Vertauschen der Achsen können auch die Dreiecke gezeichnet werden, die nicht Symmetrisch auf einer/zwei Achsen bzw. Mittelpunkt sind.
-        Vector3f t_normal_lie = new Vector3f();
-        t_normal.rotateY((float) (Math.PI / 2), t_normal_lie).rotateX((float) (Math.PI / 2), t_normal_lie);
-        // Gegenwinkel des Originals (90 - normal_side.angle(t_normal))
-        float t_angle_lie = -normal_side.angle(t_normal_lie);
+        if (_AXIS_ROTATION) {
+            generateSides(PURPLE, DARK_GREEN, normal_side, p_normal, t_normal);
+        }
 
-        M.translation(t_normal_lie.x, t_normal_lie.y, t_normal_lie.z).rotateY(-t_angle_lie).rotateZ(-Math.PI / 2);
-        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
+        if (_BUILD_MODE) {
+            // Vertices Octahedron
+            Vector3f[] vertices_o = {
+                    octahedron_vertices[4],
+                    octahedron_vertices[0],
+                    octahedron_vertices[2]
+            };
+            // Normale die durch Mittelpunkt der Seite geht
+            Vector3f o_normal = calculateMiddlePoint(vertices_o);
 
-        M.translation(t_normal_lie.x, t_normal_lie.y, -t_normal_lie.z).rotateY(Math.PI).rotateY(t_angle_lie).rotateZ(Math.PI / 2);
-        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
+            // Rectangle vertices JHGI
+            Vector3f[] vertices_r = {
+                    goldenRect_vertices[2],
+                    goldenRect_vertices[3],
+                    goldenRect_vertices[0],
+                    goldenRect_vertices[1],
+            };
+            // Normale die durch Mittelpunkt der Seite geht
+            Vector3f r_normal = calculateMiddlePoint(vertices_r);
 
-        M.translation(-t_normal_lie.x, t_normal_lie.y, t_normal_lie.z).rotateY(t_angle_lie).rotateZ(Math.PI / 2);
-        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
-
-        M.translation(-t_normal_lie.x, t_normal_lie.y, -t_normal_lie.z).rotateY(-Math.PI).rotateY(-t_angle_lie).rotateZ(-Math.PI / 2);
-        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
-
-
-        // Das gleiche für die stehende Box
-        Vector3f t_normal_s = new Vector3f();
-        t_normal.rotateX((float) (Math.PI / 2), t_normal_s).rotateY((float) (Math.PI / 2), t_normal_s);
-
-        //+90, da Achse gedreht ist und Dreh-Winkel von Original kann übernommen werden
-        M.translation(t_normal_s.x, t_normal_s.y, t_normal_s.z).rotateY(-Math.PI / 2).rotateX((Math.PI / 2) + t_angle);
-        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
-
-        M.translation(-t_normal_s.x, t_normal_s.y, t_normal_s.z).rotateY(Math.PI / 2).rotateX((Math.PI / 2) + t_angle);
-        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
-
-        M.translation(t_normal_s.x, -t_normal_s.y, t_normal_s.z).rotateY(Math.PI / 2).rotateX(-(Math.PI / 2) + t_angle);
-        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
-
-        M.translation(-t_normal_s.x, -t_normal_s.y, t_normal_s.z).rotateY(-Math.PI / 2).rotateX(-(Math.PI / 2) + t_angle);
-        drawTriangle(triangle.setRGBA(0, 1, 0, 1));
-
-
-        // TODO: Die Eck-Triangles füllen.
+            stepBuilder(buildStep, normal_side, o_normal, r_normal, p_normal, t_normal);
+        }
 
 
         // ----- End of placing sides -----
+        // reset camera/grid
+        M.translation(0, 0, 0);
+        drawTriangle(triangle.setRGBA(0, 0, 0, 1));
+
         //fps
         m_count++;
 
@@ -284,7 +284,237 @@ class Icosidodecahedron extends OGLModel3D {
         m_yAngle -= m_dyAngle;
     }
 
-    // Vector der zu Mittelpunkt einer Fläche führt
+    private void stepBuilder(int buildStep, Vector3f normal_side, Vector3f o_normal, Vector3f r_normal, Vector3f p_normal, Vector3f t_normal) {
+        // Octahedron
+        triangle.setRGBA(BLUE);
+        Vector3f rot_normal = new Vector3f();
+        normal_side.rotateY((float) (Math.PI / 4), rot_normal);
+
+        float o_angle = rot_normal.angle(o_normal);
+        final float TRIANGLE_SCALE = 2.29f;
+
+        M.translation(o_normal.x, o_normal.y, o_normal.z).rotateY(Math.PI / 4).rotateX(-o_angle).scale(TRIANGLE_SCALE);
+        drawTriangle(triangle);
+        M.translation(o_normal.x, -o_normal.y, o_normal.z).rotateY(Math.PI / 4).rotateZ(Math.PI).rotateX(-o_angle).scale(TRIANGLE_SCALE);
+        drawTriangle(triangle);
+
+        o_normal.rotateY((float) (Math.PI / 2));
+        M.translation(o_normal.x, o_normal.y, o_normal.z).rotateY(Math.PI / 4 + Math.PI / 2).rotateX(-o_angle).scale(TRIANGLE_SCALE);
+        drawTriangle(triangle);
+        M.translation(o_normal.x, -o_normal.y, o_normal.z).rotateY(Math.PI / 4 + Math.PI / 2).rotateZ(Math.PI).rotateX(-o_angle).scale(TRIANGLE_SCALE);
+        drawTriangle(triangle);
+
+        o_normal.rotateY((float) (Math.PI / 2));
+        M.translation(o_normal.x, o_normal.y, o_normal.z).rotateY(Math.PI / 4 + Math.PI).rotateX(-o_angle).scale(TRIANGLE_SCALE);
+        drawTriangle(triangle);
+        M.translation(o_normal.x, -o_normal.y, o_normal.z).rotateY(Math.PI / 4 + Math.PI).rotateZ(Math.PI).rotateX(-o_angle).scale(TRIANGLE_SCALE);
+        drawTriangle(triangle);
+
+        o_normal.rotateY((float) (Math.PI / 2));
+        M.translation(o_normal.x, o_normal.y, o_normal.z).rotateY(-Math.PI / 4).rotateX(-o_angle).scale(TRIANGLE_SCALE);
+        drawTriangle(triangle);
+        M.translation(o_normal.x, -o_normal.y, o_normal.z).rotateY(-Math.PI / 4).rotateZ(Math.PI).rotateX(-o_angle).scale(TRIANGLE_SCALE);
+        drawTriangle(triangle);
+
+
+        // Golden boxes / rectangles
+        rectangle.setRGBA(GREEN);
+        final float BOX_W_SCALE = _phi * _phi;
+        final float BOX_H_SCALE = 0.615f; //TODO fragen wo ich dies herausfinden kann
+
+        // Goldenbox Z
+        M.translation(r_normal.x, r_normal.y, r_normal.z);
+        drawPolygon(rectangle);
+        M.translation(r_normal.x, r_normal.y, -r_normal.z).rotateY(Math.PI);
+        drawPolygon(rectangle);
+
+        r_normal.rotateY((float) (Math.PI / 2));
+        M.translation(_s / 2, r_normal.y, r_normal.z).rotateY(Math.PI / 2).rotateZ(Math.PI / 2).scale(_phi);
+        drawPolygon(rectangle);
+        M.translation(-_s / 2, r_normal.y, r_normal.z).rotateY(-Math.PI / 2).rotateZ(Math.PI / 2).scale(_phi);
+        drawPolygon(rectangle);
+
+        r_normal.rotateY((float) -Math.PI / 2).rotateX((float) (Math.PI / 2));
+        M.translation(r_normal.x, -s_phi / 2, r_normal.z).rotateX(Math.PI / 2).rotateZ(Math.PI / 2).scale(BOX_W_SCALE, BOX_H_SCALE, 1);
+        drawPolygon(rectangle);
+        M.translation(r_normal.x, s_phi / 2, -r_normal.z).rotateX(-Math.PI / 2).rotateZ(Math.PI / 2).scale(BOX_W_SCALE, BOX_H_SCALE, 1);
+        drawPolygon(rectangle);
+        r_normal.rotateX((float) -Math.PI / 2);
+
+
+        // Goldenbox Y
+        rectangle.setRGBA(PINK);
+        r_normal.rotateX((float) (-Math.PI / 2)).rotateY((float) (-Math.PI / 2));
+        M.translation(r_normal.x, r_normal.y, r_normal.z).rotateX(-Math.PI / 2).rotateZ(Math.PI / 2);
+        drawPolygon(rectangle);
+        M.translation(r_normal.x, -r_normal.y, r_normal.z).rotateX(Math.PI / 2).rotateZ(Math.PI / 2);
+        drawPolygon(rectangle);
+
+        r_normal.rotateX((float) (Math.PI / 2));
+        M.translation(r_normal.x, r_normal.y, _s / 2).scale(_phi);
+        drawPolygon(rectangle);
+        M.translation(r_normal.x, r_normal.y, -_s / 2).rotateY(Math.PI).scale(_phi);
+        drawPolygon(rectangle);
+
+        r_normal.rotateY((float) -Math.PI / 2).rotateX((float) (Math.PI / 2));
+        M.translation(s_phi / 2, r_normal.y, r_normal.z).rotateY(Math.PI / 2).rotateZ(Math.PI / 2).scale(BOX_W_SCALE, BOX_H_SCALE, 1);
+        drawPolygon(rectangle);
+        M.translation(-s_phi / 2, r_normal.y, r_normal.z).rotateY(-Math.PI / 2).rotateZ(Math.PI / 2).scale(BOX_W_SCALE, BOX_H_SCALE, 1);
+        drawPolygon(rectangle);
+        r_normal.rotateX((float) -(Math.PI / 2)).rotateY((float) -Math.PI / 2);
+        r_normal.rotateY((float) (Math.PI / 2)).rotateY((float) Math.PI / 2);
+
+
+        // Goldenbox X
+        r_normal.rotateY((float) (PI / 2));
+        rectangle.setRGBA(YELLOW);
+        M.translation(r_normal.x, r_normal.y, r_normal.z).rotateY(PI / 2).rotateZ(PI / 2);
+        drawPolygon(rectangle);
+        M.translation(-r_normal.x, r_normal.y, r_normal.z).rotateY(-PI / 2).rotateZ(PI / 2);
+        drawPolygon(rectangle);
+
+        r_normal.rotateY((float) (PI / 2));
+        M.translation(r_normal.x, r_normal.y, -s_phi / 2).rotateY(PI).scale(BOX_W_SCALE, BOX_H_SCALE, 1);
+        drawPolygon(rectangle);
+        M.translation(r_normal.x, r_normal.y, s_phi / 2).rotateY(PI).rotateY(PI).scale(BOX_W_SCALE, BOX_H_SCALE, 1);
+        drawPolygon(rectangle);
+
+        r_normal.rotateX((float) (PI / 2));
+        M.translation(r_normal.x, _s / 2, r_normal.z).rotateZ(PI / 2).rotateY(PI / 2).scale(_phi);
+        drawPolygon(rectangle);
+
+        M.translation(r_normal.x, -_s / 2, r_normal.z).rotateX(PI).rotateZ(PI / 2).rotateY(PI / 2).scale(_phi);
+        drawPolygon(rectangle);
+
+
+        generateSides(PURPLE_TRANSPARENT, DARK_GREEN_TRANSPARENT, normal_side, p_normal, t_normal);
+    }
+
+    /*
+        Standard buildmodus
+     */
+    private void generateSides(Color4D pentagon_color, Color4D triangle_color, Vector3f normal_side, Vector3f p_normal, Vector3f t_normal) {
+        pentagon.setRGBA(pentagon_color);
+        triangle.setRGBA(triangle_color);
+
+        // Rotation um Seite anzugleichen
+        float p_angle = -normal_side.angle(p_normal);
+        // Zeichnen und Verschieben/Drehen der Pentagons
+        M.translation(p_normal.x, p_normal.y, p_normal.z).rotateX(p_angle);
+        drawPolygon(pentagon);
+
+        M.translation(p_normal.x, p_normal.y, -p_normal.z).rotateY(Math.PI).rotateX(p_angle);
+        drawPolygon(pentagon);
+
+        M.translation(p_normal.x, -p_normal.y, p_normal.z).rotateZ(Math.PI).rotateX(p_angle);
+        drawPolygon(pentagon);
+
+        M.translation(-p_normal.x, -p_normal.y, -p_normal.z).rotateY(Math.PI).rotateZ(Math.PI).rotateX(p_angle);
+        drawPolygon(pentagon);
+
+
+        // Mit dem Rotation an den Achsen können die Pentagon gezeichnet werden, die nicht Symmetrisch auf einer/zwei Achsen bzw. Mittelpunkt sind.
+        // Seitliche Pentagon
+        Vector3f p_normal_l = new Vector3f();
+        p_normal.rotateY((float) (Math.PI / 2), p_normal_l).rotateX((float) (Math.PI / 2), p_normal_l);
+        float p_angle_l = normal_side.angle(p_normal_l);
+
+        M.translation(p_normal_l.x, p_normal_l.y, p_normal_l.z).rotateZ(Math.PI / 2).rotateX(p_angle_l);
+        drawPolygon(pentagon);
+
+        M.translation(-p_normal_l.x, p_normal_l.y, p_normal_l.z).rotateZ(-Math.PI / 2).rotateX(p_angle_l);
+        drawPolygon(pentagon);
+
+        M.translation(p_normal_l.x, p_normal_l.y, -p_normal_l.z).rotateY(Math.PI).rotateZ(-Math.PI / 2).rotateX(p_angle_l);
+        drawPolygon(pentagon);
+
+        M.translation(-p_normal_l.x, p_normal_l.y, -p_normal_l.z).rotateY(Math.PI).rotateZ(Math.PI / 2).rotateX(p_angle_l);
+        drawPolygon(pentagon);
+
+
+        // Obere Pentagon (gedreht 180°)
+        Vector3f p_normal_s = new Vector3f();
+        p_normal.rotateX((float) (Math.PI / 2), p_normal_s).rotateY((float) (Math.PI / 2), p_normal_s);
+
+        M.translation(p_normal_s.x, p_normal_s.y, p_normal_s.z).rotateY(Math.PI / 2).rotateX(p_angle_l);
+        drawPolygon(pentagon);
+
+        M.translation(-p_normal_s.x, p_normal_s.y, p_normal_s.z).rotateY(-Math.PI / 2).rotateX(p_angle_l);
+        drawPolygon(pentagon);
+
+        M.translation(p_normal_s.x, -p_normal_s.y, p_normal_s.z).rotateY(Math.PI / 2).rotateX(-p_angle_l).rotateZ(Math.PI);
+        drawPolygon(pentagon);
+
+        M.translation(-p_normal_s.x, -p_normal_s.y, p_normal_s.z).rotateX(Math.PI).rotateY(-Math.PI / 2).rotateX(p_angle_l);
+        drawPolygon(pentagon);
+
+        // ----- Triangles -----
+        float t_angle = normal_side.angle(t_normal);    // Winkel zwischen Seitennormale und Trianglenormale
+        final float p_inner_angle = (float) ((2 * Math.PI) / 5); // 72°, Innenwinkel Pentagon
+        Vector3f p_normal_norm = new Vector3f(p_normal.x, p_normal.y, p_normal.z).normalize();  // Die Pentagon Normale muss normalisiert werden, sonst wird verzerrt.
+
+        // Die Triangles werden anhand des benachbarten Pentagons rund-herum gedreht und gerendert
+        for (int i = 0; i < 5; i++) {
+            // Triangle Koordinaten an Mittelpunkt des angrenzenden Pentagons drehen
+            t_normal.rotateAxis(i * p_inner_angle, p_normal_norm.x, p_normal_norm.y, p_normal_norm.z);
+
+            M.translation(t_normal.x, t_normal.y, t_normal.z).rotate(i * p_inner_angle, p_normal_norm).rotateZ(Math.PI).rotateX(t_angle);
+            drawTriangle(triangle);
+
+            // Die Koordinaten müssen an Z und X gegspiegelt werden -> Rotierter Vektor -X&-Z
+            p_normal_norm.z *= -1;
+            p_normal_norm.x *= -1;
+            // Auch muss die Angle des Gegenvektors des Pentagons verwendet werden, für die Rotation.
+            M.translation(-t_normal.x, t_normal.y, -t_normal.z).rotate(i * p_inner_angle, p_normal_norm).rotateY(Math.PI).rotateZ(Math.PI).rotateX(t_angle);
+            drawTriangle(triangle);
+            // Zurückspiegeln für weitere Seiten
+            p_normal_norm.z *= -1;
+            p_normal_norm.x *= -1;
+
+            // Nach unten gespiegelt: Y Achse negativ
+            // Die Rotation is umgedreht, daher muss auch die Normale gedreht werden
+            t_normal.rotateAxis(-2 * i * p_inner_angle, p_normal_norm.x, p_normal_norm.y, p_normal_norm.z);
+            p_normal_norm.y *= -1;
+            M.translation(t_normal.x, -t_normal.y, t_normal.z).rotate(i * p_inner_angle, p_normal_norm).rotateX(t_angle);
+            drawTriangle(triangle);
+
+            p_normal_norm.z *= -1;
+            p_normal_norm.x *= -1;
+            M.translation(-t_normal.x, -t_normal.y, -t_normal.z).rotate(i * p_inner_angle, p_normal_norm).rotateY(Math.PI).rotateX(t_angle);
+            drawTriangle(triangle);
+            p_normal_norm.z *= -1;
+            p_normal_norm.x *= -1;
+
+            // Reset der verstellten Koordinaten
+            p_normal_norm.y *= -1;
+            t_normal.rotateAxis(2 * i * p_inner_angle, p_normal_norm.x, p_normal_norm.y, p_normal_norm.z);
+
+            // Triangle Koordinaten an Mittelpunkt des angrenzenden Pentagons zurückdrehen
+            t_normal.rotateAxis(-i * p_inner_angle, p_normal_norm.x, p_normal_norm.y, p_normal_norm.z);
+        }
+
+        // "Liegende" Triangles (y == 0)
+        Vector3f t_normal_lie = new Vector3f();
+        t_normal.rotateY((float) (Math.PI / 2), t_normal_lie).rotateX((float) (Math.PI / 2), t_normal_lie);
+        // Gegenwinkel des Originals (90 - normal_side.angle(t_normal))
+        float t_angle_lie = -normal_side.angle(t_normal_lie);
+
+        M.translation(t_normal_lie.x, t_normal_lie.y, t_normal_lie.z).rotateY(-t_angle_lie).rotateZ(-Math.PI / 2);
+        drawTriangle(triangle);
+
+        M.translation(t_normal_lie.x, t_normal_lie.y, -t_normal_lie.z).rotateY(Math.PI).rotateY(t_angle_lie).rotateZ(Math.PI / 2);
+        drawTriangle(triangle);
+
+        M.translation(-t_normal_lie.x, t_normal_lie.y, t_normal_lie.z).rotateY(t_angle_lie).rotateZ(Math.PI / 2);
+        drawTriangle(triangle);
+
+        M.translation(-t_normal_lie.x, t_normal_lie.y, -t_normal_lie.z).rotateY(-Math.PI).rotateY(-t_angle_lie).rotateZ(-Math.PI / 2);
+        drawTriangle(triangle);
+    }
+
+    /*
+        Orts-Vektor der genau zum Mittelpunkt einer Fläche zeigt
+     */
     private Vector3f calculateMiddlePoint(Vector3f[] vertices) {
         Vector3f v_middle = new Vector3f();
 
@@ -297,9 +527,12 @@ class Icosidodecahedron extends OGLModel3D {
         return v_middle;
     }
 
-    // Eigentlich könnten die restlichen 16 vertices berechnet werden, indem die Bestehenden 8 Vertices schlau gedreht werden.
-    // Lösung mit Drehen wäre: Vertice nehmen und x->y je 90° drehen, sowie y->x je 90° drehen.
-    // Ich habe mich dafür entschieden ein Loopup table zu machen.
+    /*
+        Ich habe mich dafür entschieden ein Lookup table zu machen.
+        Tatsächlich brauche ich nur 4 Vertices von diesem Table: I,G,W,Z
+        Eigentlich könnten die restlichen 16 vertices berechnet werden, indem 8 Vertices schlau gedreht werden.
+        Lösung mit Drehen wäre: Vertice nehmen und x->y je 90° drehen, sowie y->x je 90° drehen.
+     */
     private Vector3f[] getGoldenRectangleVertices() {
         // Visualisierung auf Geogebra: https://www.geogebra.org/classic/y2k4gwwj
         Vector3f[] goldenRectangle_vertices = {
@@ -312,7 +545,7 @@ class Icosidodecahedron extends OGLModel3D {
                 new Vector3f(_s / 2, s_phi / 2, -(((_phi * _phi) * _s)) / 2), //K
                 new Vector3f(_s / 2, -s_phi / 2, -(((_phi * _phi) * _s)) / 2), //L
                 new Vector3f(-_s / 2, -s_phi / 2, -(((_phi * _phi) * _s)) / 2), //N
-                // 'Gelegtes' Rechteck
+                // 'Gelegtes' Rechteck entlang X
                 new Vector3f((((_phi * _phi) * _s)) / 2, _s / 2, s_phi / 2), //O
                 new Vector3f(-(((_phi * _phi) * _s)) / 2, _s / 2, s_phi / 2), //P
                 new Vector3f(-(((_phi * _phi) * _s)) / 2, -_s / 2, s_phi / 2), //S
@@ -321,7 +554,7 @@ class Icosidodecahedron extends OGLModel3D {
                 new Vector3f((((_phi * _phi) * _s)) / 2, _s / 2, -s_phi / 2), //R
                 new Vector3f((((_phi * _phi) * _s)) / 2, -_s / 2, -s_phi / 2), //U
                 new Vector3f(-(((_phi * _phi) * _s)) / 2, -_s / 2, -s_phi / 2), //V
-                // Hochgestelltes Rechteck (phis / 2, phis² / 2, s / 2)
+                // Hochgestelltes Rechteck entlang Y (phis / 2, phis² / 2, s / 2)
                 new Vector3f(s_phi / 2, (((_phi * _phi) * _s)) / 2, _s / 2), //W
                 new Vector3f(-s_phi / 2, (((_phi * _phi) * _s)) / 2, _s / 2), //Z
                 new Vector3f(-s_phi / 2, -(((_phi * _phi) * _s)) / 2, _s / 2), //C_1
@@ -335,7 +568,11 @@ class Icosidodecahedron extends OGLModel3D {
         return goldenRectangle_vertices;
     }
 
-    // Permutationen von (+- _s * phi, 0, 0)
+    /*
+        Vertices eines Octahedrons
+        Permutationen von (+- _s * phi, 0, 0)
+        Tatsächlich gebrauchte Vertices 2: C,E
+     */
     private Vector3f[] getOctahedron_vertices() {
         return new Vector3f[]{
                 new Vector3f(s_phi, 0, 0), //A
@@ -347,6 +584,9 @@ class Icosidodecahedron extends OGLModel3D {
         };
     }
 
+    /*
+        Disclaimer: I have used ChatGPT to generate this method. It isn't authored by me.
+    */
     private void renderCoordinateSystem() {
         glPushMatrix(); // Save the current matrix
 
@@ -399,7 +639,7 @@ class Icosidodecahedron extends OGLModel3D {
         glDrawArrays(GL_TRIANGLE_STRIP, 0, side.getVertexCount());
     }
 
-    private void drawPentagon(BaseSide side) {
+    private void drawPolygon(BaseSide side) {
         // set geometric transformation matrices for all vertices of this model
         glUniformMatrix3fv(u_VM, false, V.mul(M, VM).normal(m_vm).get(m_mat3f));
         glUniformMatrix4fv(u_PVM, false, P.mul(VM, PVM).get(m_mat4f)); // get: stores in and returns m_mat4f
@@ -418,13 +658,16 @@ class Icosidodecahedron extends OGLModel3D {
         s_phi = _s * _phi;
         triangle = new Triangle(new Color4D(0, 0, 0, 1));
         pentagon = new Pentagon(new Color4D(0, 0, 0, 1));
+        rectangle = new Rectangle(new Color4D(0, 0, 0, 1));
     }
 
     public void scaleDown(float increment) {
+        if (_s - increment < 0.1f) return;
         _s -= increment;
         s_phi = _s * _phi;
         triangle = new Triangle(new Color4D(0, 0, 0, 1));
         pentagon = new Pentagon(new Color4D(0, 0, 0, 1));
+        rectangle = new Rectangle(new Color4D(0, 0, 0, 1));
     }
 
     private static class BaseSide extends OGLObject {
@@ -451,6 +694,14 @@ class Icosidodecahedron extends OGLModel3D {
             m_color.put(1, g);
             m_color.put(2, b);
             m_color.put(3, a);
+            return this;
+        }
+
+        public BaseSide setRGBA(Color4D color) {
+            m_color.put(0, color.r);
+            m_color.put(1, color.g);
+            m_color.put(2, color.b);
+            m_color.put(3, color.a);
             return this;
         }
     }
@@ -483,32 +734,6 @@ class Icosidodecahedron extends OGLModel3D {
         }
     }
 
-    // the second form that is a side of a Icosidodecahedron is a triangle (each side same length)
-    private static class TriangleSide extends BaseSide {
-        final static int coordinatesPerVertex = 3;
-
-        protected TriangleSide(Color4D color, Vector3f[] v_coords) {
-            super(color);
-
-            final int nVertices = 3; // three points for a triangle
-            final int nCoordinates = nVertices * coordinatesPerVertex; // each coordinate triple used for one vertex
-
-            // Allocate vertex positions and normals
-            allocatePositionBuffer(nCoordinates);
-            allocateNormalBuffer(nCoordinates);
-
-
-            for (int i = 0; i < nVertices; i++) {
-                Vector3f v = v_coords[i];
-                addVertex(v.x, v.y, v.z);
-            }
-
-            // Bind vertex positions and normals
-            bindPositionBuffer();
-            bindNormalBuffer();
-        }
-    }
-
     private class Pentagon extends BaseSide {
         // 72° = 360/5 in radians
         final double angle_increment = 2 * Math.PI / 5;
@@ -527,7 +752,6 @@ class Icosidodecahedron extends OGLModel3D {
             //angepasster umkreisradius (da via Seitenlänge = _s gesteuertt wird wie gross die form ist)
             float r_u = (float) (_s / (2 * Math.sin(Math.toRadians(36))));
 
-            Vector3f vertices[] = new Vector3f[5];
             for (int i = 0; i < nVertices; i++) {
                 float x = (float) (r_u * Math.cos((Math.PI / 2) + i * angle_increment));
                 float y = (float) (r_u * Math.sin((Math.PI / 2) + i * angle_increment));
@@ -536,6 +760,27 @@ class Icosidodecahedron extends OGLModel3D {
                 addVertex(x, y, z);
             }
 
+            // Bind vertex positions and normals
+            bindPositionBuffer();
+            bindNormalBuffer();
+        }
+    }
+
+    private class Rectangle extends BaseSide {
+        protected Rectangle(Color4D color) {
+            super(color);
+
+            final int nVertices = 4; // three points for a triangle
+            final int nCoordinates = nVertices * coordinatesPerVertex; // each coordinate triple used for one vertex
+
+            // Allocate vertex positions and normals
+            allocatePositionBuffer(nCoordinates);
+            allocateNormalBuffer(nCoordinates);
+
+            addVertex(-_s / 2, -s_phi / 2, 0);
+            addVertex(_s / 2, -s_phi / 2, 0);
+            addVertex(_s / 2, s_phi / 2, 0);
+            addVertex(-_s / 2, s_phi / 2, 0);
 
             // Bind vertex positions and normals
             bindPositionBuffer();
