@@ -91,7 +91,7 @@ public class Icosidodecahedron3D extends OGLApp<Icosidodecahedron> {
                         model._BUILD_MODE = true;
                         break;
                     case GLFW_KEY_PAGE_UP:
-                        if (model.buildStep + 1 <= 7 && model._BUILD_MODE) {
+                        if (model.buildStep + 1 <= 6 && model._BUILD_MODE) {
                             model.buildStep++;
                         }
                         break;
@@ -165,8 +165,8 @@ class Icosidodecahedron extends OGLModel3D {
     // colors
     final Color4D PURPLE = new Color4D(0.62f, 0.12f, 0.94f, 1);
     final Color4D DARK_GREEN = new Color4D(0.15f, 0.56f, 0.5f, 1);
-    final Color4D PURPLE_TRANSPARENT = new Color4D(0.62f, 0.12f, 0.94f, 0.45f);
-    final Color4D DARK_GREEN_TRANSPARENT = new Color4D(0.15f, 0.56f, 0.5f, 0.45f);
+    final Color4D PURPLE_TRANSPARENT = new Color4D(0.62f, 0.12f, 0.94f, 0.6f);
+    final Color4D DARK_GREEN_TRANSPARENT = new Color4D(0.15f, 0.56f, 0.5f, 0.65f);
 
     final Color4D BLUE = new Color4D(0, 0, 1, 1);
     final Color4D PINK = new Color4D(1, 0.6f, 0.6f, 1);
@@ -401,7 +401,7 @@ class Icosidodecahedron extends OGLModel3D {
         Standard buildmodus
      */
     private void generateSides(Color4D pentagon_color, Color4D triangle_color, Vector3f normal_side, Vector3f p_normal, Vector3f t_normal) {
-        if (buildStep == 7 && _BUILD_MODE) {
+        if (buildStep == 6 && _BUILD_MODE) {
             pentagon.setRGBA(PURPLE);
             triangle.setRGBA(DARK_GREEN);
         } else {
@@ -459,13 +459,14 @@ class Icosidodecahedron extends OGLModel3D {
 
         M.translation(-p_normal_s.x, -p_normal_s.y, p_normal_s.z).rotateX(Math.PI).rotateY(-Math.PI / 2).rotateX(p_angle_l);
         drawPolygon(pentagon);
-        if (buildStep == 5 && _BUILD_MODE) return;
 
         // ----- Triangles -----
         float t_angle = normal_side.angle(t_normal);    // Winkel zwischen Seitennormale und Trianglenormale
         final float p_inner_angle = (float) ((2 * Math.PI) / 5); // 72°, Innenwinkel Pentagon
         Vector3f p_normal_norm = new Vector3f(p_normal.x, p_normal.y, p_normal.z).normalize();  // Die Pentagon Normale muss normalisiert werden, sonst wird verzerrt.
 
+        // counter zum verhindern von doppeltem Zeichnen von Seiten
+        int j = 0;
         // Die Triangles werden anhand des benachbarten Pentagons rund-herum gedreht und gerendert
         for (int i = 0; i < 5; i++) {
             // Triangle Koordinaten an Mittelpunkt des angrenzenden Pentagons drehen
@@ -479,7 +480,11 @@ class Icosidodecahedron extends OGLModel3D {
             p_normal_norm.x *= -1;
             // Auch muss die Angle des Gegenvektors des Pentagons verwendet werden, für die Rotation.
             M.translation(-t_normal.x, t_normal.y, -t_normal.z).rotate(i * p_inner_angle, p_normal_norm).rotateY(Math.PI).rotateZ(Math.PI).rotateX(t_angle);
-            drawTriangle(triangle);
+            if (i == 2 || i == 3) {
+                // Verhindere das Seite zweimal gezeichnet wird
+            } else {
+                drawTriangle(triangle);
+            }
             // Zurückspiegeln für weitere Seiten
             p_normal_norm.z *= -1;
             p_normal_norm.x *= -1;
@@ -494,7 +499,11 @@ class Icosidodecahedron extends OGLModel3D {
             p_normal_norm.z *= -1;
             p_normal_norm.x *= -1;
             M.translation(-t_normal.x, -t_normal.y, -t_normal.z).rotate(i * p_inner_angle, p_normal_norm).rotateY(Math.PI).rotateX(t_angle);
-            drawTriangle(triangle);
+            if (i == 2 || i == 3) {
+                // Verhindern das Seiten zweimal gezeichnet werden
+            } else {
+                drawTriangle(triangle);
+            }
             p_normal_norm.z *= -1;
             p_normal_norm.x *= -1;
 
@@ -523,7 +532,8 @@ class Icosidodecahedron extends OGLModel3D {
 
         M.translation(-t_normal_lie.x, t_normal_lie.y, -t_normal_lie.z).rotateY(-Math.PI).rotateY(-t_angle_lie).rotateZ(-Math.PI / 2);
         drawTriangle(triangle);
-        if (buildStep == 6) return;
+
+        if (buildStep == 5 && _BUILD_MODE) return;
     }
 
     /*
