@@ -165,8 +165,8 @@ class Icosidodecahedron extends OGLModel3D {
     // colors
     final Color4D PURPLE = new Color4D(0.62f, 0.12f, 0.94f, 1);
     final Color4D DARK_GREEN = new Color4D(0.15f, 0.56f, 0.5f, 1);
-    final Color4D PURPLE_TRANSPARENT = new Color4D(0.62f, 0.12f, 0.94f, 0.6f);
-    final Color4D DARK_GREEN_TRANSPARENT = new Color4D(0.15f, 0.56f, 0.5f, 0.65f);
+    final Color4D PURPLE_TRANSPARENT = new Color4D(0.62f, 0.12f, 0.94f, 0.75f);
+    final Color4D DARK_GREEN_TRANSPARENT = new Color4D(0.15f, 0.56f, 0.5f, 0.75f);
 
     final Color4D BLUE = new Color4D(0, 0, 1, 1);
     final Color4D PINK = new Color4D(1, 0.6f, 0.6f, 1);
@@ -295,7 +295,7 @@ class Icosidodecahedron extends OGLModel3D {
         normal_side.rotateY((float) (Math.PI / 4), rot_normal);
 
         float o_angle = rot_normal.angle(o_normal);
-        final float TRIANGLE_SCALE = 2.29f; //TODO find out why this number..
+        final float TRIANGLE_SCALE = 2.29f;
 
         M.translation(o_normal.x, o_normal.y, o_normal.z).rotateY(Math.PI / 4).rotateX(-o_angle).scale(TRIANGLE_SCALE);
         drawTriangle(triangle);
@@ -325,7 +325,7 @@ class Icosidodecahedron extends OGLModel3D {
         // Golden boxes / rectangles
         rectangle.setRGBA(GREEN);
         final float BOX_W_SCALE = _phi * _phi;
-        final float BOX_H_SCALE = 0.615f; //TODO fragen wo ich dies herausfinden kann
+        final float BOX_H_SCALE = 0.619f;
 
         // Goldenbox Z
         M.translation(r_normal.x, r_normal.y, r_normal.z);
