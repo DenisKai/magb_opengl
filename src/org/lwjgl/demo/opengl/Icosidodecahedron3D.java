@@ -91,7 +91,7 @@ public class Icosidodecahedron3D extends OGLApp<Icosidodecahedron> {
                         model._BUILD_MODE = true;
                         break;
                     case GLFW_KEY_PAGE_UP:
-                        if (model.buildStep + 1 <= 29 && model._BUILD_MODE) {
+                        if (model.buildStep + 1 <= 7 && model._BUILD_MODE) {
                             model.buildStep++;
                         }
                         break;
@@ -129,7 +129,6 @@ class Icosidodecahedron extends OGLModel3D {
     boolean _AXIS_ROTATION = true;
     boolean _BUILD_MODE = false;
     int buildStep = 0;
-    final int maxSteps = 100;
 
 
     final static double deg2rad = PI / 180;
@@ -300,35 +299,28 @@ class Icosidodecahedron extends OGLModel3D {
 
         M.translation(o_normal.x, o_normal.y, o_normal.z).rotateY(Math.PI / 4).rotateX(-o_angle).scale(TRIANGLE_SCALE);
         drawTriangle(triangle);
-        if (buildStep == 1) return;
         M.translation(o_normal.x, -o_normal.y, o_normal.z).rotateY(Math.PI / 4).rotateZ(Math.PI).rotateX(-o_angle).scale(TRIANGLE_SCALE);
         drawTriangle(triangle);
-        if (buildStep == 2) return;
 
 
         o_normal.rotateY((float) (Math.PI / 2));
         M.translation(o_normal.x, o_normal.y, o_normal.z).rotateY(Math.PI / 4 + Math.PI / 2).rotateX(-o_angle).scale(TRIANGLE_SCALE);
         drawTriangle(triangle);
-        if (buildStep == 3) return;
         M.translation(o_normal.x, -o_normal.y, o_normal.z).rotateY(Math.PI / 4 + Math.PI / 2).rotateZ(Math.PI).rotateX(-o_angle).scale(TRIANGLE_SCALE);
         drawTriangle(triangle);
-        if (buildStep == 4) return;
 
         o_normal.rotateY((float) (Math.PI / 2));
         M.translation(o_normal.x, o_normal.y, o_normal.z).rotateY(Math.PI / 4 + Math.PI).rotateX(-o_angle).scale(TRIANGLE_SCALE);
         drawTriangle(triangle);
-        if (buildStep == 5) return;
         M.translation(o_normal.x, -o_normal.y, o_normal.z).rotateY(Math.PI / 4 + Math.PI).rotateZ(Math.PI).rotateX(-o_angle).scale(TRIANGLE_SCALE);
         drawTriangle(triangle);
-        if (buildStep == 6) return;
 
         o_normal.rotateY((float) (Math.PI / 2));
         M.translation(o_normal.x, o_normal.y, o_normal.z).rotateY(-Math.PI / 4).rotateX(-o_angle).scale(TRIANGLE_SCALE);
         drawTriangle(triangle);
-        if (buildStep == 7) return;
         M.translation(o_normal.x, -o_normal.y, o_normal.z).rotateY(-Math.PI / 4).rotateZ(Math.PI).rotateX(-o_angle).scale(TRIANGLE_SCALE);
         drawTriangle(triangle);
-        if (buildStep == 8) return;
+        if (buildStep == 1) return;
 
         // Golden boxes / rectangles
         rectangle.setRGBA(GREEN);
@@ -338,27 +330,22 @@ class Icosidodecahedron extends OGLModel3D {
         // Goldenbox Z
         M.translation(r_normal.x, r_normal.y, r_normal.z);
         drawPolygon(rectangle);
-        if (buildStep == 9) return;
         M.translation(r_normal.x, r_normal.y, -r_normal.z).rotateY(Math.PI);
         drawPolygon(rectangle);
-        if (buildStep == 10) return;
 
         r_normal.rotateY((float) (Math.PI / 2));
         M.translation(_s / 2, r_normal.y, r_normal.z).rotateY(Math.PI / 2).rotateZ(Math.PI / 2).scale(_phi);
         drawPolygon(rectangle);
-        if (buildStep == 11) return;
         M.translation(-_s / 2, r_normal.y, r_normal.z).rotateY(-Math.PI / 2).rotateZ(Math.PI / 2).scale(_phi);
         drawPolygon(rectangle);
-        if (buildStep == 12) return;
 
         r_normal.rotateY((float) -Math.PI / 2).rotateX((float) (Math.PI / 2));
         M.translation(r_normal.x, -s_phi / 2, r_normal.z).rotateX(Math.PI / 2).rotateZ(Math.PI / 2).scale(BOX_W_SCALE, BOX_H_SCALE, 1);
         drawPolygon(rectangle);
-        if (buildStep == 13) return;
         M.translation(r_normal.x, s_phi / 2, -r_normal.z).rotateX(-Math.PI / 2).rotateZ(Math.PI / 2).scale(BOX_W_SCALE, BOX_H_SCALE, 1);
         drawPolygon(rectangle);
-        if (buildStep == 14) return;
         r_normal.rotateX((float) -Math.PI / 2);
+        if (buildStep == 2) return;
 
 
         // Goldenbox Y
@@ -366,28 +353,23 @@ class Icosidodecahedron extends OGLModel3D {
         r_normal.rotateX((float) (-Math.PI / 2)).rotateY((float) (-Math.PI / 2));
         M.translation(r_normal.x, r_normal.y, r_normal.z).rotateX(-Math.PI / 2).rotateZ(Math.PI / 2);
         drawPolygon(rectangle);
-        if (buildStep == 15) return;
         M.translation(r_normal.x, -r_normal.y, r_normal.z).rotateX(Math.PI / 2).rotateZ(Math.PI / 2);
         drawPolygon(rectangle);
-        if (buildStep == 16) return;
 
         r_normal.rotateX((float) (Math.PI / 2));
         M.translation(r_normal.x, r_normal.y, _s / 2).scale(_phi);
         drawPolygon(rectangle);
-        if (buildStep == 17) return;
         M.translation(r_normal.x, r_normal.y, -_s / 2).rotateY(Math.PI).scale(_phi);
         drawPolygon(rectangle);
-        if (buildStep == 18) return;
 
         r_normal.rotateY((float) -Math.PI / 2).rotateX((float) (Math.PI / 2));
         M.translation(s_phi / 2, r_normal.y, r_normal.z).rotateY(Math.PI / 2).rotateZ(Math.PI / 2).scale(BOX_W_SCALE, BOX_H_SCALE, 1);
         drawPolygon(rectangle);
-        if (buildStep == 19) return;
         M.translation(-s_phi / 2, r_normal.y, r_normal.z).rotateY(-Math.PI / 2).rotateZ(Math.PI / 2).scale(BOX_W_SCALE, BOX_H_SCALE, 1);
         drawPolygon(rectangle);
-        if (buildStep == 20) return;
         r_normal.rotateX((float) -(Math.PI / 2)).rotateY((float) -Math.PI / 2);
         r_normal.rotateY((float) (Math.PI / 2)).rotateY((float) Math.PI / 2);
+        if (buildStep == 3) return;
 
 
         // Goldenbox X
@@ -395,26 +377,21 @@ class Icosidodecahedron extends OGLModel3D {
         rectangle.setRGBA(YELLOW);
         M.translation(r_normal.x, r_normal.y, r_normal.z).rotateY(PI / 2).rotateZ(PI / 2);
         drawPolygon(rectangle);
-        if (buildStep == 21) return;
         M.translation(-r_normal.x, r_normal.y, r_normal.z).rotateY(-PI / 2).rotateZ(PI / 2);
         drawPolygon(rectangle);
-        if (buildStep == 22) return;
 
         r_normal.rotateY((float) (PI / 2));
         M.translation(r_normal.x, r_normal.y, -s_phi / 2).rotateY(PI).scale(BOX_W_SCALE, BOX_H_SCALE, 1);
         drawPolygon(rectangle);
-        if (buildStep == 23) return;
         M.translation(r_normal.x, r_normal.y, s_phi / 2).rotateY(PI).rotateY(PI).scale(BOX_W_SCALE, BOX_H_SCALE, 1);
         drawPolygon(rectangle);
-        if (buildStep == 24) return;
 
         r_normal.rotateX((float) (PI / 2));
         M.translation(r_normal.x, _s / 2, r_normal.z).rotateZ(PI / 2).rotateY(PI / 2).scale(_phi);
         drawPolygon(rectangle);
-        if (buildStep == 25) return;
         M.translation(r_normal.x, -_s / 2, r_normal.z).rotateX(PI).rotateZ(PI / 2).rotateY(PI / 2).scale(_phi);
         drawPolygon(rectangle);
-        if (buildStep == 26) return;
+        if (buildStep == 4) return;
 
 
         generateSides(PURPLE_TRANSPARENT, DARK_GREEN_TRANSPARENT, normal_side, p_normal, t_normal);
@@ -424,7 +401,7 @@ class Icosidodecahedron extends OGLModel3D {
         Standard buildmodus
      */
     private void generateSides(Color4D pentagon_color, Color4D triangle_color, Vector3f normal_side, Vector3f p_normal, Vector3f t_normal) {
-        if (buildStep == 29 && _BUILD_MODE) {
+        if (buildStep == 7 && _BUILD_MODE) {
             pentagon.setRGBA(PURPLE);
             triangle.setRGBA(DARK_GREEN);
         } else {
@@ -482,7 +459,7 @@ class Icosidodecahedron extends OGLModel3D {
 
         M.translation(-p_normal_s.x, -p_normal_s.y, p_normal_s.z).rotateX(Math.PI).rotateY(-Math.PI / 2).rotateX(p_angle_l);
         drawPolygon(pentagon);
-        if (buildStep == 27 && _BUILD_MODE) return;
+        if (buildStep == 5 && _BUILD_MODE) return;
 
         // ----- Triangles -----
         float t_angle = normal_side.angle(t_normal);    // Winkel zwischen Seitennormale und Trianglenormale
@@ -546,6 +523,7 @@ class Icosidodecahedron extends OGLModel3D {
 
         M.translation(-t_normal_lie.x, t_normal_lie.y, -t_normal_lie.z).rotateY(-Math.PI).rotateY(-t_angle_lie).rotateZ(-Math.PI / 2);
         drawTriangle(triangle);
+        if (buildStep == 6) return;
     }
 
     /*
