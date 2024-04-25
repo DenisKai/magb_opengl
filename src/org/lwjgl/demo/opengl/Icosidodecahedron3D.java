@@ -297,7 +297,7 @@ class Icosidodecahedron extends OGLModel3D {
         normal_side.rotateY((float) (Math.PI / 4), rot_normal);
 
         float o_angle = rot_normal.angle(o_normal);
-        final float TRIANGLE_SCALE = 2.29f;
+        final float TRIANGLE_SCALE = 2.29f; //TODO find out why this number..
 
         M.translation(o_normal.x, o_normal.y, o_normal.z).rotateY(Math.PI / 4).rotateX(-o_angle).scale(TRIANGLE_SCALE);
         drawTriangle(triangle);
@@ -425,7 +425,7 @@ class Icosidodecahedron extends OGLModel3D {
         Standard buildmodus
      */
     private void generateSides(Color4D pentagon_color, Color4D triangle_color, Vector3f normal_side, Vector3f p_normal, Vector3f t_normal) {
-        if (buildStep == 29) {
+        if (buildStep == 29 && _BUILD_MODE) {
             pentagon.setRGBA(PURPLE);
             triangle.setRGBA(DARK_GREEN);
         } else {
@@ -483,7 +483,7 @@ class Icosidodecahedron extends OGLModel3D {
 
         M.translation(-p_normal_s.x, -p_normal_s.y, p_normal_s.z).rotateX(Math.PI).rotateY(-Math.PI / 2).rotateX(p_angle_l);
         drawPolygon(pentagon);
-        if (buildStep == 27) return;
+        if (buildStep == 27 && _BUILD_MODE) return;
 
         // ----- Triangles -----
         float t_angle = normal_side.angle(t_normal);    // Winkel zwischen Seitennormale und Trianglenormale
