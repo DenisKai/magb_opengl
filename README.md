@@ -6,6 +6,7 @@ OpenGL project expanded by Denis Kai Wilhelm
 Reference in [Geogebra](https://www.geogebra.org/classic/y2k4gwwj)
 
 How to use:
+
 - Left: rotate left
 - Right: rotate right
 - Up: rotate up
@@ -13,7 +14,8 @@ How to use:
 - Spacebar: Stop rotation
 - U: Scale UP
 - J: Scale DOWN
-- A: Standard mode
-- B: 'Build'-Mode
-- PAGE-UP: Add one side of the inscribed structures
-- PAGE-DOWN: Remove one side of the inscribed structures
+- A: activate Standard mode
+- B: activate 'Build'-Mode
+- When build-mode active:
+    - PAGE-UP: Add one side of the inscribed structures
+    - PAGE-DOWN: Remove one side of the inscribed structures
