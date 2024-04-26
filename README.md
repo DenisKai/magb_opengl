@@ -1,5 +1,12 @@
 # OpenGL-Student-Denis Kai Wilhelm
 
+Ich habe das Icosidodecahedron gebaut indem ich aus 6 Vertices 2 Normalen gebildet habe. Die dritte Normale ist die der Seite die gezeichnet wird.
+Anhand dieser Normalen und geschickter Rotation, Spiegelung und Skalierung habe ich das Icosidodecahedron aus einem Fünfeck und einem Dreieck gebaut.
+
+Das 'Innenleben' des Icosidodecahedron habe ich mit dem gleichen Dreieck und Vertices gebaut. Die goldenen Boxen sind mit einer neuen Seite gebaut,
+bestehen jedoch auch nur aus einer Seite, die ich geschickt Rotiert und Skaliert habe.
+
+
 OpenGL project expanded by Denis Kai Wilhelm
 (Base Project by Christoph Stamm)
 
@@ -17,5 +24,5 @@ How to use:
 - A: activate Standard mode
 - B: activate 'Build'-Mode
 - When build-mode active:
-    - PAGE-UP: Add one side of the inscribed structures
-    - PAGE-DOWN: Remove one side of the inscribed structures
+  - PAGE-UP: Add one side of the inscribed structures
+  - PAGE-DOWN: Remove one side of the inscribed structures
