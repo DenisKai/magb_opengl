@@ -6,11 +6,8 @@ Anhand dieser Normalen und geschickter Rotation, Spiegelung und Skalierung habe 
 Das 'Innenleben' des Icosidodecahedron habe ich mit dem gleichen Dreieck und Vertices gebaut. Die goldenen Boxen sind mit einer neuen Seite gebaut,
 bestehen jedoch auch nur aus einer Seite, die ich geschickt Rotiert und Skaliert habe.
 
+Ich habe das ganze Icosidodecahedron in [Geogebra](https://www.geogebra.org/classic/y2k4gwwj) nachgebaut für Visualisierung und Benennung der einzelnen Vertices.
 
-OpenGL project expanded by Denis Kai Wilhelm
-(Base Project by Christoph Stamm)
-
-Reference in [Geogebra](https://www.geogebra.org/classic/y2k4gwwj)
 
 How to use:
 
@@ -26,3 +23,7 @@ How to use:
 - When build-mode active:
   - PAGE-UP: Add one side of the inscribed structures
   - PAGE-DOWN: Remove one side of the inscribed structures
+
+
+OpenGL project expanded by Denis Kai Wilhelm
+(Base Project by Christoph Stamm)
